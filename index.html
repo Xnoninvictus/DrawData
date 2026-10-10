@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>drawdata — draw a dataset</title>
+<meta name="description" content="Draw a scatter or bar dataset by hand and export it as CSV or JSON. A standalone, offline-friendly build of the drawdata widget engine.">
+
+<link rel="stylesheet" href="css/scatter_widget.css">
+<link rel="stylesheet" href="css/bar_widget.css">
+<link rel="stylesheet" href="css/bar_widget_theme.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">&#9998;</span>
+      <div class="brand-text">
+        <h1>drawdata</h1>
+        <p class="tagline">Just draw some data and get on with your day.</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <nav class="mode-tabs" role="tablist" aria-label="Widget mode">
+        <button class="mode-tab" data-mode="scatter" role="tab" aria-selected="true" id="tabScatter">Scatter</button>
+        <button class="mode-tab" data-mode="bar" role="tab" aria-selected="false" id="tabBar">Bar</button>
+      </nav>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">&#9681;</button>
+    </div>
+  </header>
+
+  <div class="session-banner" id="sessionBanner">
+    <span>A previous drawing was found in this browser. Restore it?</span>
+    <span style="display:flex; gap:0.5rem;">
+      <button class="btn btn-small" id="restoreSession">Restore</button>
+      <button class="btn btn-small" id="discardSession">Discard</button>
+    </span>
+  </div>
+
+  <main class="layout">
+    <section class="canvas-card" aria-label="Drawing canvas">
+      <div class="canvas-card-spine" aria-hidden="true"></div>
+      <div class="canvas-card-inner">
+        <p class="mode-caption" id="modeCaption">
+          <strong>Scatter mode</strong> — pick a class, then click or click-and-drag on the grid to paint points.
+        </p>
+        <div id="widgetMount"></div>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="panel" id="settingsPanel">
+        <h2>Settings</h2>
+
+        <div id="scatterSettings">
+          <p class="panel-hint">Width &amp; height apply instantly. Changing the number of classes resets the canvas.</p>
+          <div class="field">
+            <label for="scatterClasses">Number of classes</label>
+            <select id="scatterClasses">
+              <option value="1">1 — regression only</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="scatterWidth">Canvas width (px)</label>
+              <input type="number" id="scatterWidth" min="360" max="1400" step="20" value="760">
+            </div>
+            <div class="field">
+              <label for="scatterHeight">Canvas height (px)</label>
+              <input type="number" id="scatterHeight" min="240" max="900" step="20" value="420">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="applyScatterClasses">Apply class count &amp; reset canvas</button>
+        </div>
+
+        <div id="barSettings" class="hidden">
+          <p class="panel-hint">All bar settings reset the canvas when applied (bins start back at the minimum value).</p>
+          <div class="field-row">
+            <div class="field">
+              <label for="barBins">Number of bins</label>
+              <input type="number" id="barBins" min="4" max="60" step="1" value="24">
+            </div>
+            <div class="field">
+              <label for="barCollections">Collections</label>
+              <select id="barCollections">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="barYMin">Y minimum</label>
+              <input type="number" id="barYMin" step="0.1" value="0">
+            </div>
+            <div class="field">
+              <label for="barYMax">Y maximum</label>
+              <input type="number" id="barYMax" step="0.1" value="1">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="barWidth">Canvas width (px)</label>
+              <input type="number" id="barWidth" min="360" max="1400" step="20" value="760">
+            </div>
+            <div class="field">
+              <label for="barHeight">Canvas height (px)</label>
+              <input type="number" id="barHeight" min="240" max="900" step="20" value="480">
+            </div>
+          </div>
+          <div class="collection-names" id="collectionNameFields"></div>
+          <button class="btn btn-primary" id="applyBarSettings">Apply &amp; reset canvas</button>
+        </div>
+      </section>
+
+      <section class="panel" id="dataPanel">
+        <h2>Data</h2>
+        <p class="panel-hint">Updates live as you draw. Export whenever you're happy with it.</p>
+        <div class="stat-row" id="statRow">No points drawn yet.</div>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead><tr id="dataTableHead"></tr></thead>
+            <tbody id="dataTableBody"></tbody>
+          </table>
+        </div>
+        <div class="export-actions">
+          <button class="btn" id="downloadCsv">Download CSV</button>
+          <button class="btn" id="downloadJson">Download JSON</button>
+          <button class="btn" id="copyJson">Copy JSON</button>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <p>
+      Draw a dataset, then use it in pandas, polars, or scikit-learn.
+      Built on the open-source <a href="https://github.com/koaning/drawdata" target="_blank" rel="noopener noreferrer">drawdata</a>
+      widget engine (MIT License) by Vincent&nbsp;D.&nbsp;Warmerdam — this build runs entirely in your browser,
+      no Python kernel or notebook required. Your drawing is stored only in this browser (localStorage); nothing is uploaded anywhere.
+    </p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="vendor/d3.v7.bundle.js"></script>
+<script src="js/model.js"></script>
+<script src="js/scatter_render.js"></script>
+<script src="js/bar_render.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
